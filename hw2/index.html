@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+
+<body>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        tr:nth-of-type(odd) {
+            background: #eee;
+        }
+
+        th {
+            background: white;
+            cursor: pointer;
+        }
+
+        td,
+        th {
+            padding: 5px;
+            text-align: left;
+            border-collapse: collapse;
+            border: 1px solid black;
+        }
+
+        caption {
+            border: solid black;
+            border-width: 1px 1px 0px;
+        }
+
+        th:empty,
+        td:empty {
+            display: none;
+        }
+    </style>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const myTable = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
+
+        fetch('https://yslpn.github.io/worldbank-data/countries_2012.json')
+            .then(x => x.json())
+            .then((data) => {
+
+                const table = d3.select("body").append("table"),
+                    thead = table.append("thead")
+                        .attr("class", "thead");
+                tbody = table.append("tbody");
+
+                let switching = true;
+
+                table.append("caption")
+                    .html("World Countries Ranking");
+
+                thead.append("tr").selectAll("th")
+                    .data(Object.keys(data[0]))
+                    .enter()
+                    .append("th")
+                    .text(function (d) {
+                        if (myTable.indexOf(d) != -1) {
+                            return d;
+                        }
+                    })
+                    .on("click", function (header, i) {
+
+                        tbody.selectAll("tr").sort(function (a, b) {
+                            if (switching === true) {
+                                return d3.ascending(a[header], b[header]);
+                            } else if (switching === false) {
+                                return d3.descending(a[header], b[header]);
+                            }
+
+                        });
+                        switching = !switching;
+                    });
+
+                var rows = tbody.selectAll("tr.row")
+                    .data(data)
+                    .enter()
+                    .append("tr").attr("class", "row");
+
+                var cells = rows.selectAll("td")
+                    .data(function (row) {
+                        return d3.range(Object.keys(row).length).map(function (column, i) {
+                            if (myTable.indexOf(Object.keys(row)[i]) != -1) {
+
+                                if (Object.keys(row)[i] === "life_expectancy") {
+                                    return Math.ceil(row[Object.keys(row)[i]]);
+                                } else if (Object.keys(row)[i] === "gdp") {
+                                    return Math.round(row[Object.keys(row)[i]] / 1000000000) + "G";
+                                } else if (Object.keys(row)[i] === "population") {
+                                    return row[Object.keys(row)[i]].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                }
+
+                                return row[Object.keys(row)[i]];
+                            }
+
+                        });
+                    })
+                    .enter()
+                    .append("td")
+                    .text(function (d) { return d; })
+                    .on("mouseover", function (d, i) {
+
+                        d3.select(this.parentNode)
+                            .style("background-color", "#F3ED86");
+
+                    }).on("mouseout", function () {
+
+                        tbody.selectAll("tr")
+                            .style("background-color", null)
+                            .selectAll("td")
+                            .style("background-color", null);
+
+                    });
+            });
+    </script>
+</body>
+
+</html>
