@@ -12,17 +12,21 @@
         table {
             border-collapse: collapse;
         }
+
         caption {
             border: solid black;
             border-width: 1px 1px 0px;
         }
+
         tr:nth-of-type(odd) {
             background: #eee;
         }
+
         th {
             background: white;
             cursor: pointer;
         }
+
         td,
         th {
             padding: 5px;
@@ -32,17 +36,21 @@
     </style>
 
     <script type="application/javascript">
+
         const myColumns = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
         const filterTitles = { Americas: [], Africa: [], Asia: [], Europe: [], Oceania: [] };
         // Object.keys(filterTitles);
         const continentFilter = ['Americas', 'Africa', 'Asia', 'Europe', 'Oceania'];
         let sortAscending = false;
+
         d3.json("https://yslpn.github.io/worldbank-data/countries_2012.json", function (error, data) {
+
             // Создаём список для чекбоксов
             const filterController = d3.select('body').append('ul')
                 .attr('class', 'controller-row')
                 .text('Filter by:').selectAll('li')
                 .data(Object.keys(filterTitles)).enter().append("li");
+
             // Создаём чекбоксы
             filterController.append('input').attr('type', 'checkbox').property('checked', true)
                 .attr('id', function (d) { return 'checkbox-' + d.toLowerCase(); })
@@ -70,27 +78,32 @@
                             this.remove();
                         }
                     });
+
                 });
             // Добавить лейблы к чекбоксам
             filterController.append("label")
                 .attr('for', function (d) { return 'checkbox-' + d.toLowerCase(); })
                 .text(function (d) { return d; });
+
             // Добавляем кнопку перезагрузки таблицы
             d3.select("body").append("button").property('disabled', true).text('Refresh Table')
                 .on("click", function () {
                     window.location.reload()
                 });
+
             // Создание таблицы
             const table = d3.select("body").append("table"),
                 caption = table.append("caption")
                     .text("World Countries Ranking"),
                 thead = table.append("thead"),
                 tbody = table.append("tbody");
+
             // Создаём строки таблицы
             const rows = tbody.selectAll("tr.row")
                 .data(data)
                 .enter()
                 .append("tr").attr("class", "row");
+
             // Создаём заголовки
             thead.append("tr").selectAll("th")
                 .attr('class', 'row')
@@ -111,9 +124,11 @@
                     });
                     sortAscending = !sortAscending;
                 });
+
             // Заполняем ячейки строк
             const cells = rows.selectAll("td")
                 .data(function (row) {
+
                     return d3.range(myColumns.length).map(function (column, i) {
                         if (myColumns.indexOf(myColumns[i]) != -1) {
                             if (myColumns[i] === "life_expectancy") {
@@ -127,22 +142,28 @@
                             } else if (myColumns[i] === "population") {
                                 return row[myColumns[i]].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                             }
+
                             return row[myColumns[i]];
                         }
                     });
+
                 })
                 .enter()
                 .append("td")
                 .text(function (d) { return d; })
                 // Добавляем событие выделения наведением
                 .on("mouseover", function () {
+
                     d3.select(this.parentNode)
                         .style("background-color", "#F3ED86");
+
                 }).on("mouseout", function () {
+
                     tbody.selectAll("tr")
                         .style("background-color", null)
                         .selectAll("td")
                         .style("background-color", null);
+
                 });
         });
     </script>
