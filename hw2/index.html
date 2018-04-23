@@ -1,122 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-<meta charset="utf-8">
+
+<head>
+    <meta charset="utf-8">
+    <script type="application/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+
+</head>
 
 <body>
     <style>
         table {
-            width: 100%;
             border-collapse: collapse;
         }
-
-        tr:nth-of-type(odd) {
-            background: #eee;
-        }
-
-        th {
-            background: white;
-            cursor: pointer;
-        }
-
-        td,
-        th {
-            padding: 5px;
-            text-align: left;
-            border-collapse: collapse;
-            border: 1px solid black;
-        }
-
         caption {
             border: solid black;
             border-width: 1px 1px 0px;
         }
-
-        th:empty,
-        td:empty {
-            display: none;
+        tr:nth-of-type(odd) {
+            background: #eee;
+        }
+        th {
+            background: white;
+            cursor: pointer;
+        }
+        td,
+        th {
+            padding: 5px;
+            border: 1px solid black;
+            text-align: center;
         }
     </style>
 
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script>
-        const myTable = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
-
-        fetch('https://yslpn.github.io/worldbank-data/countries_2012.json')
-            .then(x => x.json())
-            .then((data) => {
-
-                const table = d3.select("body").append("table"),
-                    thead = table.append("thead")
-                        .attr("class", "thead");
-                tbody = table.append("tbody");
-
-                let switching = true;
-
-                table.append("caption")
-                    .html("World Countries Ranking");
-
-                thead.append("tr").selectAll("th")
-                    .data(Object.keys(data[0]))
-                    .enter()
-                    .append("th")
-                    .text(function (d) {
-                        if (myTable.indexOf(d) != -1) {
-                            return d;
+    <script type="application/javascript">
+        const myColumns = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
+        const filterTitles = { Americas: [], Africa: [], Asia: [], Europe: [], Oceania: [] };
+        // Object.keys(filterTitles);
+        const continentFilter = ['Americas', 'Africa', 'Asia', 'Europe', 'Oceania'];
+        let sortAscending = false;
+        d3.json("https://yslpn.github.io/worldbank-data/countries_2012.json", function (error, data) {
+            // Создаём список для чекбоксов
+            const filterController = d3.select('body').append('ul')
+                .attr('class', 'controller-row')
+                .text('Filter by:').selectAll('li')
+                .data(Object.keys(filterTitles)).enter().append("li");
+            // Создаём чекбоксы
+            filterController.append('input').attr('type', 'checkbox').property('checked', true)
+                .attr('id', function (d) { return 'checkbox-' + d.toLowerCase(); })
+                .attr('name', function (d) { return d; })
+                .attr('value', function (d) { return d; })
+                // Создаём событие изменения чекбокса
+                .on('change', function (value) {
+                    // Включаем кнопку перезагрузки страницы
+                    d3.select('button').property('disabled', false);
+                    // Выключаем чекбокс
+                    d3.select(`#checkbox-${value.toLowerCase()}`).property('disabled', true);
+                    // Следим за выключенными/включеными чекбоксами
+                    if (this.checked) {
+                        continentFilter.push(value);
+                    } else {
+                        let index = continentFilter.indexOf(value);
+                        if (continentFilter.indexOf(value) !== -1) {
+                            continentFilter.splice(index, 1);
                         }
-                    })
-                    .on("click", function (header, i) {
-
-                        tbody.selectAll("tr").sort(function (a, b) {
-                            if (switching === true) {
-                                return d3.ascending(a[header], b[header]);
-                            } else if (switching === false) {
-                                return d3.descending(a[header], b[header]);
-                            }
-
-                        });
-                        switching = !switching;
+                    }
+                    //Проходим по всем строчкам, если не тот континент, то удаляем строку.
+                    d3.selectAll('tr.row').each(function (d, i) {
+                        if (continentFilter.indexOf(d['continent']) === -1) {
+                            filterTitles[d['continent']].push(this);
+                            this.remove();
+                        }
                     });
-
-                var rows = tbody.selectAll("tr.row")
-                    .data(data)
-                    .enter()
-                    .append("tr").attr("class", "row");
-
-                var cells = rows.selectAll("td")
-                    .data(function (row) {
-                        return d3.range(Object.keys(row).length).map(function (column, i) {
-                            if (myTable.indexOf(Object.keys(row)[i]) != -1) {
-
-                                if (Object.keys(row)[i] === "life_expectancy") {
-                                    return Math.ceil(row[Object.keys(row)[i]]);
-                                } else if (Object.keys(row)[i] === "gdp") {
-                                    return Math.round(row[Object.keys(row)[i]] / 1000000000) + "G";
-                                } else if (Object.keys(row)[i] === "population") {
-                                    return row[Object.keys(row)[i]].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                });
+            // Добавить лейблы к чекбоксам
+            filterController.append("label")
+                .attr('for', function (d) { return 'checkbox-' + d.toLowerCase(); })
+                .text(function (d) { return d; });
+            // Добавляем кнопку перезагрузки таблицы
+            d3.select("body").append("button").property('disabled', true).text('Refresh Table')
+                .on("click", function () {
+                    window.location.reload()
+                });
+            // Создание таблицы
+            const table = d3.select("body").append("table"),
+                caption = table.append("caption")
+                    .text("World Countries Ranking"),
+                thead = table.append("thead"),
+                tbody = table.append("tbody");
+            // Создаём строки таблицы
+            const rows = tbody.selectAll("tr.row")
+                .data(data)
+                .enter()
+                .append("tr").attr("class", "row");
+            // Создаём заголовки
+            thead.append("tr").selectAll("th")
+                .attr('class', 'row')
+                .data(myColumns)
+                .enter()
+                .append("th")
+                .text(function (d) {
+                    return d;
+                })
+                // Добавляем собитие сортировки по клику на заголовке
+                .on("click", function (header, i) {
+                    tbody.selectAll("tr").sort(function (a, b) {
+                        if (sortAscending === true) {
+                            return d3.ascending(a[header], b[header]);
+                        } else {
+                            return d3.descending(a[header], b[header]);
+                        }
+                    });
+                    sortAscending = !sortAscending;
+                });
+            // Заполняем ячейки строк
+            const cells = rows.selectAll("td")
+                .data(function (row) {
+                    return d3.range(myColumns.length).map(function (column, i) {
+                        if (myColumns.indexOf(myColumns[i]) != -1) {
+                            if (myColumns[i] === "life_expectancy") {
+                                return Math.ceil(row[myColumns[i]]);
+                            } else if (myColumns[i] === "gdp") {
+                                if (row[myColumns[i]] > 1000000000000) {
+                                    return Math.round(row[myColumns[i]] / 1000000000000) + "T";
+                                } else {
+                                    return Math.round(row[myColumns[i]] / 1000000000) + "G";
                                 }
-
-                                return row[Object.keys(row)[i]];
+                            } else if (myColumns[i] === "population") {
+                                return row[myColumns[i]].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                             }
-
-                        });
-                    })
-                    .enter()
-                    .append("td")
-                    .text(function (d) { return d; })
-                    .on("mouseover", function (d, i) {
-
-                        d3.select(this.parentNode)
-                            .style("background-color", "#F3ED86");
-
-                    }).on("mouseout", function () {
-
-                        tbody.selectAll("tr")
-                            .style("background-color", null)
-                            .selectAll("td")
-                            .style("background-color", null);
-
+                            return row[myColumns[i]];
+                        }
                     });
-            });
+                })
+                .enter()
+                .append("td")
+                .text(function (d) { return d; })
+                // Добавляем событие выделения наведением
+                .on("mouseover", function () {
+                    d3.select(this.parentNode)
+                        .style("background-color", "#F3ED86");
+                }).on("mouseout", function () {
+                    tbody.selectAll("tr")
+                        .style("background-color", null)
+                        .selectAll("td")
+                        .style("background-color", null);
+                });
+        });
     </script>
 </body>
 
