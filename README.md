@@ -5,7 +5,7 @@
     <h1 align="center"></h1>
 </p>
 <p align="center">
-    <em><code>► INSERT-TEXT-HERE</code></em>
+    <em><code>► [INSERT-TEXT-HERE](https://viktor-ko.github.io/)</code></em>
 </p>
 <p align="center">
 	<img src="https://img.shields.io/github/license/viktor-ko/viktor-ko.github.io?style=flat&color=0080ff" alt="license">
