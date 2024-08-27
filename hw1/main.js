@@ -14,7 +14,7 @@ let el = document.getElementById('quote');
 let i = 0;
 
 function changePLS() {
-    readTextFile("hw1/quotes.json", function (text) {
+    readTextFile("https://raw.githubusercontent.com/viktor-ko/viktor-ko.github.io/master/hw1/quotes.json", function (text) {
         let data = JSON.parse(text);
         el.textContent = '"' + data[i].quoteText + '"'+ ' - ' + data[i].quoteAuthor;
     });
